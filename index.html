@@ -2,11 +2,119 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>我的第一个网站</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的永久留言板</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f4f4f9; color: #333; }
+        h1 { text-align: center; color: #4a4a4a; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        .message-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .message-name { font-weight: bold; color: #0070f3; }
+        .message-time { font-size: 0.8em; color: #888; float: right; }
+        #loading { text-align: center; color: #666; }
+    </style>
 </head>
 <body>
-    <h1>🎉 成功！我的网站上线啦！</h1>
-    <p>这是我从零开始部署的第一个网页。</p>
-    <p>现在它已经可以在全球访问了！🌍</p>
+
+    <h1>📝 永久留言板</h1>
+
+    <!-- 输入区域 -->
+    <div class="card">
+        <input type="text" id="nameInput" placeholder="你的名字">
+        <textarea id="contentInput" rows="3" placeholder="写下你想说的话..."></textarea>
+        <button onclick="submitMessage()" id="submitBtn">发布留言</button>
+    </div>
+
+    <!-- 留言列表区域 -->
+    <div class="card">
+        <h3>最新留言</h3>
+        <div id="loading">加载中...</div>
+        <div id="messagesList"></div>
+    </div>
+
+    <script>
+        // ⚠️ 重要：请将下面的网址替换为你自己的 Worker 地址
+        // 格式类似：https://guestbook-api.your-name.workers.dev
+        const API_URL = "guestbook-api.3395744606.workers.dev"; 
+
+        // 1. 页面加载时获取留言
+        async function loadMessages() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                
+                const list = document.getElementById('messagesList');
+                document.getElementById('loading').style.display = 'none';
+                list.innerHTML = '';
+
+                if (data.length === 0) {
+                    list.innerHTML = '<p style="text-align:center; color:#999;">还没有留言，快来抢沙发！</p>';
+                    return;
+                }
+
+                data.forEach(msg => {
+                    const div = document.createElement('div');
+                    div.className = 'message-item';
+                    div.innerHTML = `
+                        <span class="message-name">${escapeHtml(msg.name)}</span>
+                        <span class="message-time">${new Date(msg.created_at).toLocaleString()}</span>
+                        <p>${escapeHtml(msg.content)}</p>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (e) {
+                document.getElementById('loading').innerText = "加载失败，请检查 API 地址是否正确。";
+                console.error(e);
+            }
+        }
+
+        // 2. 提交留言
+        async function submitMessage() {
+            const name = document.getElementById('nameInput').value;
+            const content = document.getElementById('contentInput').value;
+            const btn = document.getElementById('submitBtn');
+
+            if (!name || !content) {
+                alert("请填写名字和内容！");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "发布中...";
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, content })
+                });
+
+                if (res.ok) {
+                    alert("发布成功！");
+                    document.getElementById('nameInput').value = '';
+                    document.getElementById('contentInput').value = '';
+                    loadMessages(); // 刷新列表
+                } else {
+                    alert("发布失败，请稍后重试。");
+                }
+            } catch (e) {
+                alert("网络错误：" + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "发布留言";
+            }
+        }
+
+        // 防止 XSS 攻击的简单函数
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // 初始化
+        loadMessages();
+    </script>
 </body>
 </html>

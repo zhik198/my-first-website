@@ -1,6 +1,5 @@
 export async function onRequestPost(context) {
   // 1. 获取数据库连接
-  // 注意：这里的 'DB' 必须和你在 Cloudflare 绑定的名称（截图中的 Name 列）完全一致
   const DB = context.env.DB;
 
   try {
@@ -19,69 +18,66 @@ export async function onRequestPost(context) {
         });
       }
 
-      // D1 标准查询语法
-      const result = await DB.prepare('SELECT COUNT(*) as count FROM messages WHERE name = ?').bind(name).first();
+      // 注意：表名改为了 users
+      const result = await DB.prepare('SELECT COUNT(*) as count FROM users WHERE name = ?')
+        .bind(name)
+        .first();
 
-      // result 可能是 null，需要安全访问
       const count = result?.count || 0;
 
       return new Response(JSON.stringify({ exists: count > 0 }), {
-        status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // --- 逻辑分支 B：处理注册请求 ---
+    // --- 逻辑分支 B：用户注册 ---
     if (path === '/api/register') {
-      const { name, password, confirmPassword, inviteCode } = body;
+      const { name, password, invite_code } = body;
 
-      // 验证逻辑（保持不变）
-      if (password !== confirmPassword) {
-        return new Response(JSON.stringify({ error: '两次密码输入不一致' }), {
+      if (!name || !password || !invite_code) {
+        return new Response(JSON.stringify({ error: '缺少必要参数' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
       }
 
-      // 请确保这是你实际想用的邀请码
-      const VALID_INVITE_CODE = 'g6z6q6';
-      if (inviteCode !== VALID_INVITE_CODE) {
-        return new Response(JSON.stringify({ error: '邀请码错误，无法注册' }), {
+      // 1. 检查用户名是否已被占用
+      const checkUser = await DB.prepare('SELECT id FROM users WHERE name = ?')
+        .bind(name)
+        .first();
+
+      if (checkUser) {
+        return new Response(JSON.stringify({ error: '用户名已被注册' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
       }
 
-      // 检查用户名是否已存在
-      const checkResult = await DB.prepare('SELECT COUNT(*) as count FROM messages WHERE name = ?').bind(name).first();
-      const userCount = checkResult?.count || 0;
-
-      if (userCount > 0) {
-        return new Response(JSON.stringify({ error: '用户名已被占用' }), {
+      // 2. 验证邀请码（这里假设邀请码是 "123456"，请根据实际情况修改）
+      if (invite_code !== '123456') {
+        return new Response(JSON.stringify({ error: '邀请码无效' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
       }
 
-      // 执行注册（插入数据）
-      // 注意：这里假设你的表叫 messages，且有 name, password, content 字段
-      await DB.prepare('INSERT INTO messages (name, password, content) VALUES (?, ?, ?)')
-        .bind(name, password, '这是用户的初始内容')
+      // 3. 插入新用户
+      // 注意：表名和字段名必须与 SQL 语句匹配
+      await DB.prepare('INSERT INTO users (name, password, invite_code) VALUES (?, ?, ?)')
+        .bind(name, password, invite_code)
         .run();
 
-      return new Response(JSON.stringify({ message: '注册成功，欢迎加入' }), {
-        status: 200,
+      return new Response(JSON.stringify({ message: '注册成功' }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
     // 如果路径不匹配，返回 404
-    return new Response('Not Found', { status: 404 });
-
-  } catch (error) {
-    console.error('后端错误:', error);
-    // 即使发生错误，也返回 JSON，防止前端报 "Unexpected token '<'"
-    return new Response(JSON.stringify({ error: '服务器繁忙，请稍后再试' }), {
+    return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404 });
+  } catch (err) {
+    // 关键修复：确保无论发生什么错误，都返回 JSON 格式，防止前端报 "Unexpected token '<'"
+    console.error('Server Error:', err);
+    return new Response(JSON.stringify({ error: '服务器内部错误', details: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

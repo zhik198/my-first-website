@@ -307,7 +307,16 @@ registerSubmitBtn.addEventListener('click', async () => {
 
   try {
     // 前端验证通过后，先检查用户名是否已存在
-    const checkRes = await fetch(`/api/check_username?name=${encodeURIComponent(username)}`);
+      // 改为 POST 请求
+const checkRes = await fetch('/api/check_username', { 
+    method: 'POST', // 明确指定方法
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: username }) // 放在 Body 里，而不是 URL 里
+});
+
+
+      
+    
     const checkData = await checkRes.json();
     
     if (checkData.exists) {

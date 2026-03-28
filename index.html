@@ -193,7 +193,6 @@
     // API 地址 (请根据你的实际后端接口修改)
     const API_URL = "/api/message";
     const LOGIN_API_URL = "/api/login";
-    const REGISTER_API_URL = "/api/register"; // 假设你有这个接口
 
     // 预设邀请码
     const PRESET_INVITE_CODE = "g6z6q6";
@@ -282,73 +281,72 @@
         }
     });
 
-    // --- 3. 注册功能 (重点逻辑) ---
-    registerSubmitBtn.addEventListener('click', async () => {
-        const username = document.getElementById('regUsername').value.trim();
-        const password = document.getElementById('regPassword').value.trim();
-        const confirmPassword = document.getElementById('regConfirmPassword').value.trim();
-        const inviteCode = document.getElementById('regInviteCode').value.trim();
+   // --- 3. 注册功能 (重点逻辑) ---
+registerSubmitBtn.addEventListener('click', async () => {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value.trim();
+  const confirmPassword = document.getElementById('regConfirmPassword').value.trim();
+  const inviteCode = document.getElementById('regInviteCode').value.trim();
 
-        // 清除旧提示
-        regStatusMsg.innerHTML = "";
+  // 清除旧提示
+  regStatusMsg.innerHTML = "";
 
-        // 前端基础验证
-        if (!username || !password || !confirmPassword || !inviteCode) {
-            regStatusMsg.innerHTML = "所有字段均为必填";
-            return;
-        }
+  // 前端基础验证
+  if (!username || !password || !confirmPassword || !inviteCode) {
+    regStatusMsg.innerHTML = "所有字段均为必填";
+    return;
+  }
+  if (password !== confirmPassword) {
+    regStatusMsg.innerHTML = "两次输入的密码不一致";
+    return;
+  }
+  if (inviteCode !== PRESET_INVITE_CODE) {
+    regStatusMsg.innerHTML = "邀请码错误";
+    return;
+  }
 
-        if (password !== confirmPassword) {
-            regStatusMsg.innerHTML = "两次输入的密码不一致";
-            return;
-        }
+  try {
+    // 前端验证通过后，先检查用户名是否已存在
+    const checkRes = await fetch(`/api/check_username?name=${encodeURIComponent(username)}`);
+    const checkData = await checkRes.json();
+    
+    if (checkData.exists) {
+      regStatusMsg.innerHTML = "该用户名已被占用，请更换一个";
+      return;
+    }
 
-        if (inviteCode !== PRESET_INVITE_CODE) {
-            regStatusMsg.innerHTML = "邀请码错误";
-            return;
-        }
-
-        // **用户名去重检查逻辑**
-        try {
-            // 假设后端有一个接口可以检查用户名是否存在
-            // 这里模拟一个检查过程
-            const checkRes = await fetch(`/api/check_username?name=${encodeURIComponent(username)}`);
-            const checkData = await checkRes.json();
-
-            if (checkData.exists) {
-                regStatusMsg.innerHTML = "该用户名已被占用，请更换一个";
-                return;
-            }
-        } catch (err) {
-            regStatusMsg.innerHTML = "检查用户名时发生错误";
-            return;
-        }
-
-        // 如果通过了所有验证，提交注册
-        try {
-            const res = await fetch(REGISTER_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    username, 
-                    password,
-                    invite_code: inviteCode
-                })
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                alert('注册成功！请登录');
-                showLogin();
-            } else {
-                regStatusMsg.innerHTML = data.message || "注册失败";
-            }
-        } catch (err) {
-            regStatusMsg.innerHTML = "网络错误";
-        }
+    // ==================================================
+    // ✅ 正确位置：只有前面的检查都通过了，才执行下面的 fetch
+    // ==================================================
+    const response = await fetch('/api/message.post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'register',
+        name: username,
+        password: password,
+        confirmPassword: confirmPassword,
+        inviteCode: inviteCode
+      })
     });
 
+    const data = await response.json();
+
+    if (response.ok && data.message) {
+      // 注册成功
+      alert('注册成功！请登录');
+      showLogin();
+    } else {
+      // 后端返回的错误
+      regStatusMsg.innerHTML = data.error || "注册失败";
+    }
+
+  } catch (err) {
+    console.error(err);
+    regStatusMsg.innerHTML = "网络错误或检查用户名时出错";
+  }
+  // <-- 注意：这里只有一个 try...catch，原来的第二个被删除了 -->
+});
     // --- 4. 显示留言板 ---
     function showMessageBox() {
         loginPage.style.display = 'none';

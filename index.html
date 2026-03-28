@@ -8,48 +8,138 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f4f4f9; color: #333; }
         h1 { text-align: center; color: #4a4a4a; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        /* 输入框样式 */
+        textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        /* 按钮样式 */
         button { width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #0056b3; }
         button:disabled { background: #ccc; cursor: not-allowed; }
-        .message-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        
+        /* 留言列表样式 */
+        .message-item { border-bottom: 1px solid #eee; padding: 10px 0; position: relative; }
         .message-name { font-weight: bold; color: #0070f3; }
         .message-time { font-size: 0.8em; color: #888; float: right; }
         #loading { text-align: center; color: #666; padding: 10px; }
+
+        /* 删除按钮样式 */
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 0;
+            width: auto; /* 覆盖全局按钮宽度 */
+            background: #ff4d4f;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .delete-btn:hover { background: #d9363e; }
+
+        /* 登录弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            max-width: 90%;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .close:hover { color: #000; }
+        
+        /* 用户信息显示区域 */
+        #currentUserDisplay {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 4px;
+            color: #1890ff;
+            font-weight: bold;
+            text-align: center;
+        }
+        /* 登录表单内的输入框 */
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
 
     <h1>📝 永久留言板</h1>
 
-    <!-- 输入区域 -->
+    <!-- 1. 登录弹窗 HTML (放在最前面确保加载) -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>请登录</h2>
+            <form id="login-form">
+                <input type="text" id="login-username" placeholder="用户名" required>
+                <input type="password" id="login-password" placeholder="密码" required>
+                <button type="submit">登录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. 留言板主体 -->
     <div class="card">
-        <input type="text" id="nameInput" placeholder="你的名字">
+        <!-- 隐藏的用户名输入框 -->
+        <input type="hidden" id="nameInput">
+        
+        <!-- 显示当前登录用户 -->
+        <div id="currentUserDisplay">正在检查登录状态...</div>
+
+        <!-- 内容输入 -->
         <textarea id="contentInput" rows="3" placeholder="写下你想说的话..."></textarea>
         <button id="submitBtn">发布留言</button>
     </div>
 
-    <!-- 留言列表区域 -->
+    <!-- 3. 留言列表区域 -->
     <div class="card">
         <h3>最新留言</h3>
         <div id="loading">加载中...</div>
         <div id="messagesList"></div>
     </div>
 
-    <!-- 👇 关键：把 script 放在 body 最后，确保 DOM 已加载 -->
-        <script>
-        // API 地址
+    <!-- 4. JavaScript 逻辑 -->
+    <script>
         const API_URL = "/api/message";
         const LOGIN_API_URL = "/api/login";
 
         // 获取 DOM 元素
         const submitBtn = document.getElementById('submitBtn');
-        const nameInput = document.getElementById('nameInput');
+        const nameInput = document.getElementById('nameInput'); // 隐藏框
         const contentInput = document.getElementById('contentInput');
         const messagesList = document.getElementById('messagesList');
         const loadingDiv = document.getElementById('loading');
+        const currentUserDisplay = document.getElementById('currentUserDisplay');
         
-        // 新增：登录相关元素
+        // 登录相关元素
         const loginModal = document.getElementById('login-modal');
         const loginForm = document.getElementById('login-form');
         const closeBtn = document.querySelector('.close');
@@ -59,10 +149,15 @@
             const token = document.cookie.replace(/(?:(?:^|.*;\s*)auth_token\s*\=\s*([^;]*).*$)|^.*$/, "$1");
             
             if (!token) {
-                // 如果没有 Cookie，显示登录弹窗
+                // 没登录，显示弹窗
                 loginModal.style.display = 'flex';
+                currentUserDisplay.innerText = "游客 (请先登录)";
             } else {
-                // 如果有 Cookie，加载留言
+                // 已登录，隐藏弹窗，尝试获取用户名
+                loginModal.style.display = 'none';
+                // 这里我们暂时无法直接知道用户名，除非后端有 /api/user 接口
+                // 暂时显示“已登录”，等用户提交时再校验，或者你可以手动添加获取用户的逻辑
+                currentUserDisplay.innerText = "已登录 (加载中...)";
                 loadMessages();
             }
         }
@@ -75,13 +170,18 @@
 
             try {
                 const res = await fetch(`${LOGIN_API_URL}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`, {
-                    method: 'GET' // 使用 GET 请求，参数在 URL 里
+                    method: 'GET'
                 });
 
                 if (res.ok) {
                     const data = await res.json();
-                    // 设置 Cookie，有效期 1 年
+                    // 保存 Token
                     document.cookie = `auth_token=${data.token}; path=/; max-age=31536000`;
+                    
+                    // 更新前端显示
+                    nameInput.value = username; // 存入隐藏框
+                    currentUserDisplay.innerText = "你好，" + username;
+                    
                     loginModal.style.display = 'none';
                     loadMessages();
                 } else {
@@ -98,7 +198,7 @@
             loginModal.style.display = 'none';
         });
 
-        // 4. 加载留言（带删除按钮）
+        // 4. 加载留言
         async function loadMessages() {
             try {
                 const res = await fetch(API_URL);
@@ -116,13 +216,12 @@
                 data.forEach(msg => {
                     const div = document.createElement('div');
                     div.className = 'message-item';
-                    // 安全转义防止 XSS
                     const safeName = escapeHtml(msg.name);
                     const safeContent = escapeHtml(msg.content);
                     const timeStr = new Date(msg.created_at).toLocaleString();
 
-                    // 动态生成删除按钮 (如果用户有权限)
                     let deleteBtnHtml = '';
+                    // 如果有删除权限，显示删除按钮
                     if (msg.can_delete) {
                         deleteBtnHtml = `<button class="delete-btn" onclick="deleteMessage(${msg.id})">删除</button>`;
                     }
@@ -142,17 +241,22 @@
             }
         }
 
-        // 5. 提交留言函数
+        // 5. 提交留言
         async function handleSubmit() {
-            const name = nameInput.value.trim();
+            const name = nameInput.value.trim(); // 从隐藏框获取用户名
             const content = contentInput.value.trim();
 
-            if (!name || !content) {
-                alert('请填写姓名和留言内容');
+            // 如果没登录（隐藏框是空的），提示登录
+            if (!name) {
+                alert('请先登录');
+                loginModal.style.display = 'flex';
+                return;
+            }
+            if (!content) {
+                alert('请填写留言内容');
                 return;
             }
 
-            // 锁定按钮防止重复提交
             submitBtn.disabled = true;
             submitBtn.textContent = '发布中...';
 
@@ -165,39 +269,28 @@
 
                 if (response.ok) {
                     alert('发布成功!');
-                    // 清空输入框
-                    nameInput.value = '';
                     contentInput.value = '';
-                    
-                    // 成功后立即刷新列表
                     await loadMessages(); 
-                    
                 } else {
                     const errorText = await response.text();
                     alert('发布失败: ' + errorText);
                 }
             } catch (e) {
                 alert('网络错误: ' + e.message);
-                console.error("Submit error:", e);
             } finally {
-                // 恢复按钮状态
                 submitBtn.disabled = false;
                 submitBtn.textContent = '发布留言';
             }
         }
 
-        // 6. 删除留言函数 (挂载到 window 以便 HTML 调用)
+        // 6. 删除留言
         window.deleteMessage = async (id) => {
             if (!confirm('确定要删除这条留言吗？')) return;
-
             try {
-                const res = await fetch(`${API_URL}?id=${id}`, {
-                    method: 'DELETE'
-                });
-
+                const res = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
                 if (res.ok) {
                     alert('删除成功');
-                    await loadMessages(); // 刷新列表
+                    await loadMessages();
                 } else {
                     alert('删除失败，可能是因为权限不足');
                 }
@@ -206,65 +299,15 @@
             }
         };
 
-        // 防止 XSS 攻击的工具函数
+        // 防止 XSS
         function escapeHtml(text) {
             if (!text) return "";
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
-        // 7. 初始化：绑定事件并检查登录
+        // 7. 初始化
         submitBtn.addEventListener('click', handleSubmit);
-        checkAuth(); // 启动时检查登录
+        checkAuth(); 
     </script>
-    <!-- 登录弹窗 -->
-<div id="login-modal" class="modal">
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <h2>登录</h2>
-    <form id="login-form">
-      <input type="text" id="login-username" placeholder="用户名" required>
-      <input type="password" id="login-password" placeholder="密码" required>
-      <button type="submit">登录</button>
-    </form>
-  </div>
-</div>
-
-<style>
-  /* 模态框背景 */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    justify-content: center;
-    align-items: center;
-  }
-
-  /* 模态框内容 */
-  .modal-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px;
-    max-width: 90%;
-  }
-
-  .close {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 24px;
-    cursor: pointer;
-  }
-</style>
 </body>
 </html>

@@ -1,53 +1,33 @@
 // functions/api/message.js
+const { Client } = require('@vercel/postgres');
+const client = new Client();
 
-export async function onRequest(context) {
-  const { env, request } = context;
-  const url = new URL(request.url);
+export default async function handler(req, res) {
+  await client.connect();
 
-  // 处理 GET 请求：获取留言列表
-  if (request.method === "GET") {
-    try {
-      const { results } = await env.DB.prepare(
-        "SELECT * FROM messages ORDER BY created_at DESC LIMIT 50"
-      ).all();
-      return Response.json(results);
-    } catch (e) {
-      return new Response("Error fetching messages: " + e.message, { status: 500 });
-    }
-  } 
-  
-  // 处理 POST 请求：提交新留言
-  else if (request.method === "POST") {
-    try {
-      // 1. 解析前端传来的 JSON 数据
-      const { name, content } = await request.json();
+  try {
+    // 1. 如果是 GET 请求且带有 checkName 参数，则执行检查用户名逻辑
+    if (req.method === 'GET' && req.query.checkName) {
+      const { checkName } = req.query;
 
-      // 简单验证
-      if (!name || !content) {
-        return new Response("Missing name or content", { status: 400 });
+      const result = await client.sql`SELECT COUNT(*) FROM messages WHERE name = ${checkName}`;
+      const count = parseInt(result.rows[0].count);
+
+      if (count > 0) {
+        return res.status(400).json({ exists: true, message: '用户名已存在，请更换' });
+      } else {
+        return res.status(200).json({ exists: false, message: '用户名可用' });
       }
-
-      // 2. 准备插入数据库的 SQL 语句
-      // 假设您的 D1 数据库表结构包含 id, name, content, created_at
-      const stmt = env.DB.prepare(
-        "INSERT INTO messages (name, content, created_at) VALUES (?, ?, ?)"
-      );
-      
-      // 3. 执行插入操作
-      // bind 绑定参数，run() 执行写入操作
-      await stmt.bind(name, content, new Date().toISOString()).run();
-
-      // 4. 返回成功响应
-      return new Response(JSON.stringify({ success: true }), { 
-        status: 200, 
-        headers: { "Content-Type": "application/json" } 
-      });
-
-    } catch (e) {
-      return new Response("Error saving message: " + e.message, { status: 500 });
     }
-  }
 
-  // 处理其他不支持的请求方法
-  return new Response("Method not allowed", { status: 405 });
+    // 2. 原有的获取留言列表逻辑
+    const result = await client.sql`SELECT * FROM messages ORDER BY created_at DESC LIMIT 50`;
+    return res.status(200).json(result.rows);
+
+  } catch (error) {
+    console.error('Database query error:', error);
+    return res.status(500).json({ error: '数据库查询失败' });
+  } finally {
+    await client.end();
+  }
 }

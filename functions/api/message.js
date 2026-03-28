@@ -1,33 +1,30 @@
-// functions/api/message.js
-const { Client } = require('@vercel/postgres');
-const client = new Client();
+export async function onRequest(context) {
+    const { request, env } = context;
+    const DB = env.DB;
+    const method = request.method;
 
-export default async function handler(req, res) {
-  await client.connect();
-
-  try {
-    // 1. 如果是 GET 请求且带有 checkName 参数，则执行检查用户名逻辑
-    if (req.method === 'GET' && req.query.checkName) {
-      const { checkName } = req.query;
-
-      const result = await client.sql`SELECT COUNT(*) FROM messages WHERE name = ${checkName}`;
-      const count = parseInt(result.rows[0].count);
-
-      if (count > 0) {
-        return res.status(400).json({ exists: true, message: '用户名已存在，请更换' });
-      } else {
-        return res.status(200).json({ exists: false, message: '用户名可用' });
-      }
+    // 1. 获取留言 (GET)
+    if (method === "GET") {
+        const { results } = await DB.prepare("SELECT * FROM messages ORDER BY created_at ASC").all();
+        return new Response(JSON.stringify(results), { headers: { "Content-Type": "application/json" } });
     }
 
-    // 2. 原有的获取留言列表逻辑
-    const result = await client.sql`SELECT * FROM messages ORDER BY created_at DESC LIMIT 50`;
-    return res.status(200).json(result.rows);
+    // 2. 发送留言 (POST)
+    if (method === "POST") {
+        const { name, content } = await request.json();
+        await DB.prepare("INSERT INTO messages (name, content) VALUES (?, ?)").bind(name, content).run();
+        return new Response(JSON.stringify({ success: true }), { status: 201 });
+    }
 
-  } catch (error) {
-    console.error('Database query error:', error);
-    return res.status(500).json({ error: '数据库查询失败' });
-  } finally {
-    await client.end();
-  }
+    // 3. 删除留言 (DELETE)
+    if (method === "DELETE") {
+        const url = new URL(request.url);
+        const id = url.searchParams.get("id");
+        if (!id) return new Response("Missing ID", { status: 400 });
+        
+        await DB.prepare("DELETE FROM messages WHERE id = ?").bind(id).run();
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+    }
+
+    return new Response("Method not allowed", { status: 405 });
 }

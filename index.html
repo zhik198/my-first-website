@@ -5,309 +5,431 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的永久留言板</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f4f4f9; color: #333; }
-        h1 { text-align: center; color: #4a4a4a; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        /* 输入框样式 */
-        textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        
-        /* 按钮样式 */
-        button { width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #0056b3; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        
-        /* 留言列表样式 */
-        .message-item { border-bottom: 1px solid #eee; padding: 10px 0; position: relative; }
-        .message-name { font-weight: bold; color: #0070f3; }
-        .message-time { font-size: 0.8em; color: #888; float: right; }
-        #loading { text-align: center; color: #666; padding: 10px; }
-
-        /* 删除按钮样式 */
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 0;
-            width: auto; /* 覆盖全局按钮宽度 */
-            background: #ff4d4f;
-            padding: 5px 10px;
-            font-size: 12px;
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .delete-btn:hover { background: #d9363e; }
 
-        /* 登录弹窗样式 */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f4f4f9;
+            color: #333;
+            display: flex;
             justify-content: center;
             align-items: center;
-        }
-        .modal-content {
-            background-color: white;
+            min-height: 100vh;
             padding: 20px;
-            border-radius: 8px;
-            width: 300px;
-            max-width: 90%;
-            position: relative;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
-        .close {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #aaa;
-        }
-        .close:hover { color: #000; }
-        
-        /* 用户信息显示区域 */
-        #currentUserDisplay {
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #e6f7ff;
-            border: 1px solid #91d5ff;
-            border-radius: 4px;
-            color: #1890ff;
-            font-weight: bold;
+
+        /* --- 公共卡片样式 --- */
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             text-align: center;
-        }
-        /* 登录表单内的输入框 */
-        .modal-content input {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
+            max-width: 400px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* --- 登录页面样式 --- */
+        #loginPage {
+            display: block; /* 默认显示登录页 */
+        }
+
+        #registerPage {
+            display: none; /* 默认隐藏注册页 */
+        }
+
+        /* 输入框通用样式 */
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
-            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        /* 按钮通用样式 */
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button.secondary {
+            background: #fff;
+            color: #0070f3;
+            border: 1px solid #0070f3;
+        }
+
+        button.secondary:hover {
+            background: #f0f0f0;
+        }
+
+        /* --- 留言板页面样式 (登录后显示) --- */
+        #messagePage {
+            display: none; /* 默认隐藏 */
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            text-align: left;
+        }
+
+        #messagePage h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .message-list {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .message-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .message-name {
+            font-weight: bold;
+            color: #0070f3;
+        }
+
+        .message-time {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .error-text {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
+            text-align: left;
+        }
+
+        .success-text {
+            color: green;
+            font-size: 0.9em;
+            margin-top: 5px;
+            text-align: left;
         }
     </style>
 </head>
 <body>
 
-    <h1>📝 永久留言板</h1>
+    <!-- 1. 登录页面 -->
+    <div id="loginPage" class="card">
+        <h2>登录</h2>
+        <input type="text" id="loginUsername" placeholder="用户名">
+        <input type="password" id="loginPassword" placeholder="密码">
+        <button id="loginSubmitBtn">登录</button>
+        <button class="secondary" onclick="showRegister()">没有账号？去注册</button>
+    </div>
 
-    <!-- 1. 登录弹窗 HTML (放在最前面确保加载) -->
-    <div id="login-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>请登录</h2>
-            <form id="login-form">
-                <input type="text" id="login-username" placeholder="用户名" required>
-                <input type="password" id="login-password" placeholder="密码" required>
-                <button type="submit">登录</button>
-            </form>
+    <!-- 2. 注册页面 -->
+    <div id="registerPage" class="card">
+        <h2>注册新账号</h2>
+        <input type="text" id="regUsername" placeholder="设置用户名">
+        <input type="password" id="regPassword" placeholder="设置密码">
+        <input type="password" id="regConfirmPassword" placeholder="确认密码">
+        <input type="text" id="regInviteCode" placeholder="邀请码 (g6z6q6)">
+        <div id="regStatusMsg" class="error-text"></div>
+        <button id="registerSubmitBtn">注册</button>
+        <button class="secondary" onclick="showLogin()">已有账号？去登录</button>
+    </div>
+
+    <!-- 3. 留言板页面 (登录后显示) -->
+    <div id="messagePage">
+        <h1>📝 永久留言板</h1>
+        
+        <div style="margin-bottom: 20px;">
+            <textarea id="contentInput" placeholder="写下你想说的话..."></textarea>
+            <button id="submitBtn">发布留言</button>
+        </div>
+
+        <div class="message-list" id="messagesList">
+            <div id="loading">加载中...</div>
         </div>
     </div>
 
-    <!-- 2. 留言板主体 -->
-    <div class="card">
-        <!-- 隐藏的用户名输入框 -->
-        <input type="hidden" id="nameInput">
+<script>
+    // API 地址 (请根据你的实际后端接口修改)
+    const API_URL = "/api/message";
+    const LOGIN_API_URL = "/api/login";
+    const REGISTER_API_URL = "/api/register"; // 假设你有这个接口
+
+    // 预设邀请码
+    const PRESET_INVITE_CODE = "g6z6q6";
+
+    // 获取 DOM 元素
+    const loginPage = document.getElementById('loginPage');
+    const registerPage = document.getElementById('registerPage');
+    const messagePage = document.getElementById('messagePage');
+
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const contentInput = document.getElementById('contentInput');
+    const messagesList = document.getElementById('messagesList');
+    const loadingDiv = document.getElementById('loading');
+    const regStatusMsg = document.getElementById('regStatusMsg');
+
+    // 当前登录的用户名
+    let currentUsername = null;
+
+    // --- 页面切换函数 ---
+    function showLogin() {
+        loginPage.style.display = 'block';
+        registerPage.style.display = 'none';
+        regStatusMsg.innerHTML = "";
+    }
+
+    function showRegister() {
+        loginPage.style.display = 'none';
+        registerPage.style.display = 'block';
+        regStatusMsg.innerHTML = "";
+    }
+
+    // --- 1. 检查登录状态 ---
+    function checkAuth() {
+        // 简单的 Cookie 检查逻辑
+        const token = document.cookie.replace(/(?:(?:^|.*;\s*)auth_token\s*\=\s*([^;]*).*$)|^.*$/, "$1");
         
-        <!-- 显示当前登录用户 -->
-        <div id="currentUserDisplay">正在检查登录状态...</div>
-
-        <!-- 内容输入 -->
-        <textarea id="contentInput" rows="3" placeholder="写下你想说的话..."></textarea>
-        <button id="submitBtn">发布留言</button>
-    </div>
-
-    <!-- 3. 留言列表区域 -->
-    <div class="card">
-        <h3>最新留言</h3>
-        <div id="loading">加载中...</div>
-        <div id="messagesList"></div>
-    </div>
-
-    <!-- 4. JavaScript 逻辑 -->
-    <script>
-        const API_URL = "/api/message";
-        const LOGIN_API_URL = "/api/login";
-
-        // 获取 DOM 元素
-        const submitBtn = document.getElementById('submitBtn');
-        const nameInput = document.getElementById('nameInput'); // 隐藏框
-        const contentInput = document.getElementById('contentInput');
-        const messagesList = document.getElementById('messagesList');
-        const loadingDiv = document.getElementById('loading');
-        const currentUserDisplay = document.getElementById('currentUserDisplay');
-        
-        // 登录相关元素
-        const loginModal = document.getElementById('login-modal');
-        const loginForm = document.getElementById('login-form');
-        const closeBtn = document.querySelector('.close');
-
-        // 1. 检查登录状态
-        function checkAuth() {
-            const token = document.cookie.replace(/(?:(?:^|.*;\s*)auth_token\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-            
-            if (!token) {
-                // 没登录，显示弹窗
-                loginModal.style.display = 'flex';
-                currentUserDisplay.innerText = "游客 (请先登录)";
+        if (token) {
+            // 如果有 Token，尝试获取用户名或直接加载页面
+            currentUsername = getCookie("username"); // 假设登录时存了用户名
+            if (currentUsername) {
+                showMessageBox();
             } else {
-                // 已登录，隐藏弹窗，尝试获取用户名
-                loginModal.style.display = 'none';
-                // 这里我们暂时无法直接知道用户名，除非后端有 /api/user 接口
-                // 暂时显示“已登录”，等用户提交时再校验，或者你可以手动添加获取用户的逻辑
-                currentUserDisplay.innerText = "已登录 (加载中...)";
+                showLogin();
+            }
+        } else {
+            showLogin();
+        }
+    }
+
+    // --- 2. 登录功能 ---
+    loginSubmitBtn.addEventListener('click', async () => {
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+
+        if (!username || !password) {
+            alert('请输入用户名和密码');
+            return;
+        }
+
+        try {
+            // 这里模拟调用登录 API
+            // 假设返回 { success: true, token: "xxx", username: "xxx" }
+            const response = await fetch(LOGIN_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // 保存 Token 和用户名
+                document.cookie = `auth_token=${data.token}; path=/; max-age=31536000`;
+                document.cookie = `username=${username}; path=/; max-age=31536000`;
+                currentUsername = username;
+                showMessageBox();
                 loadMessages();
+            } else {
+                alert('登录失败：' + (data.message || '用户名或密码错误'));
             }
+        } catch (err) {
+            console.error(err);
+            alert('网络错误');
+        }
+    });
+
+    // --- 3. 注册功能 (重点逻辑) ---
+    registerSubmitBtn.addEventListener('click', async () => {
+        const username = document.getElementById('regUsername').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+        const confirmPassword = document.getElementById('regConfirmPassword').value.trim();
+        const inviteCode = document.getElementById('regInviteCode').value.trim();
+
+        // 清除旧提示
+        regStatusMsg.innerHTML = "";
+
+        // 前端基础验证
+        if (!username || !password || !confirmPassword || !inviteCode) {
+            regStatusMsg.innerHTML = "所有字段均为必填";
+            return;
         }
 
-        // 2. 登录功能
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-
-            try {
-                const res = await fetch(`${LOGIN_API_URL}?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`, {
-                    method: 'GET'
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    // 保存 Token
-                    document.cookie = `auth_token=${data.token}; path=/; max-age=31536000`;
-                    
-                    // 更新前端显示
-                    nameInput.value = username; // 存入隐藏框
-                    currentUserDisplay.innerText = "你好，" + username;
-                    
-                    loginModal.style.display = 'none';
-                    loadMessages();
-                } else {
-                    alert('登录失败，请检查用户名密码');
-                }
-            } catch (err) {
-                console.error(err);
-                alert('网络错误');
-            }
-        });
-
-        // 3. 关闭弹窗
-        closeBtn.addEventListener('click', () => {
-            loginModal.style.display = 'none';
-        });
-
-        // 4. 加载留言
-        async function loadMessages() {
-            try {
-                const res = await fetch(API_URL);
-                if (!res.ok) throw new Error('Network response was not ok');
-                const data = await res.json();
-                
-                loadingDiv.style.display = 'none';
-                messagesList.innerHTML = '';
-
-                if (data.length === 0) {
-                    messagesList.innerHTML = '<p style="text-align:center; color:#999;">还没有留言，快来抢沙发！</p>';
-                    return;
-                }
-
-                data.forEach(msg => {
-                    const div = document.createElement('div');
-                    div.className = 'message-item';
-                    const safeName = escapeHtml(msg.name);
-                    const safeContent = escapeHtml(msg.content);
-                    const timeStr = new Date(msg.created_at).toLocaleString();
-
-                    let deleteBtnHtml = '';
-                    // 如果有删除权限，显示删除按钮
-                    if (msg.can_delete) {
-                        deleteBtnHtml = `<button class="delete-btn" onclick="deleteMessage(${msg.id})">删除</button>`;
-                    }
-
-                    div.innerHTML = `
-                        <span class="message-name">${safeName}</span>
-                        <span class="message-time">${timeStr}</span>
-                        ${deleteBtnHtml}
-                        <p style="margin-top:5px; word-break: break-word;">${safeContent}</p>
-                    `;
-                    messagesList.appendChild(div);
-                });
-            } catch (e) {
-                loadingDiv.innerText = "加载失败，请稍后重试。";
-                loadingDiv.style.display = 'block';
-                console.error("Load error:", e);
-            }
+        if (password !== confirmPassword) {
+            regStatusMsg.innerHTML = "两次输入的密码不一致";
+            return;
         }
 
-        // 5. 提交留言
-        async function handleSubmit() {
-            const name = nameInput.value.trim(); // 从隐藏框获取用户名
-            const content = contentInput.value.trim();
+        if (inviteCode !== PRESET_INVITE_CODE) {
+            regStatusMsg.innerHTML = "邀请码错误";
+            return;
+        }
 
-            // 如果没登录（隐藏框是空的），提示登录
-            if (!name) {
-                alert('请先登录');
-                loginModal.style.display = 'flex';
+        // **用户名去重检查逻辑**
+        try {
+            // 假设后端有一个接口可以检查用户名是否存在
+            // 这里模拟一个检查过程
+            const checkRes = await fetch(`/api/check_username?name=${encodeURIComponent(username)}`);
+            const checkData = await checkRes.json();
+
+            if (checkData.exists) {
+                regStatusMsg.innerHTML = "该用户名已被占用，请更换一个";
                 return;
             }
-            if (!content) {
-                alert('请填写留言内容');
+        } catch (err) {
+            regStatusMsg.innerHTML = "检查用户名时发生错误";
+            return;
+        }
+
+        // 如果通过了所有验证，提交注册
+        try {
+            const res = await fetch(REGISTER_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    username, 
+                    password,
+                    invite_code: inviteCode
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('注册成功！请登录');
+                showLogin();
+            } else {
+                regStatusMsg.innerHTML = data.message || "注册失败";
+            }
+        } catch (err) {
+            regStatusMsg.innerHTML = "网络错误";
+        }
+    });
+
+    // --- 4. 显示留言板 ---
+    function showMessageBox() {
+        loginPage.style.display = 'none';
+        registerPage.style.display = 'none';
+        messagePage.style.display = 'block';
+    }
+
+    // --- 5. 加载留言 ---
+    async function loadMessages() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            
+            loadingDiv.style.display = 'none';
+            messagesList.innerHTML = '';
+
+            if (data.length === 0) {
+                messagesList.innerHTML = '<p style="text-align:center; color:#999;">还没有留言，快来抢沙发！</p>';
                 return;
             }
 
-            submitBtn.disabled = true;
-            submitBtn.textContent = '发布中...';
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, content })
-                });
-
-                if (response.ok) {
-                    alert('发布成功!');
-                    contentInput.value = '';
-                    await loadMessages(); 
-                } else {
-                    const errorText = await response.text();
-                    alert('发布失败: ' + errorText);
-                }
-            } catch (e) {
-                alert('网络错误: ' + e.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '发布留言';
-            }
+            data.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'message-item';
+                div.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-name">${escapeHtml(msg.name)}</span>
+                        <span class="message-time">${new Date(msg.created_at).toLocaleString()}</span>
+                    </div>
+                    <p>${escapeHtml(msg.content)}</p>
+                `;
+                messagesList.appendChild(div);
+            });
+        } catch (e) {
+            console.error(e);
         }
+    }
 
-        // 6. 删除留言
-        window.deleteMessage = async (id) => {
-            if (!confirm('确定要删除这条留言吗？')) return;
-            try {
-                const res = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    alert('删除成功');
-                    await loadMessages();
-                } else {
-                    alert('删除失败，可能是因为权限不足');
-                }
-            } catch (e) {
-                alert('网络错误');
+    // --- 6. 发布留言 ---
+    submitBtn.addEventListener('click', async () => {
+        const content = contentInput.value.trim();
+        if (!content) return;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: currentUsername, 
+                    content 
+                })
+            });
+
+            if (res.ok) {
+                contentInput.value = '';
+                await loadMessages();
+            } else {
+                alert('发布失败');
             }
-        };
-
-        // 防止 XSS
-        function escapeHtml(text) {
-            if (!text) return "";
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        } catch (e) {
+            console.error(e);
         }
+    });
 
-        // 7. 初始化
-        submitBtn.addEventListener('click', handleSubmit);
-        checkAuth(); 
-    </script>
+    // --- 辅助函数 ---
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function getCookie(name) {
+        return document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || '';
+    }
+
+    // --- 页面初始化 ---
+    checkAuth();
+</script>
+
 </body>
 </html>

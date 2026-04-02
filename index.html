@@ -242,36 +242,30 @@
         const messages = await res.json();
         const currentUser = getCookie("username");
         
-       // --- 修改后的日期处理逻辑 ---
+     // --- 暴力修正：手动处理 8 小时时区偏移 ---
 list.innerHTML = messages.map(msg => {
     const isMine = msg.name === currentUser;
     
-    // 1. 将原始时间转为 Date 对象
-    const date = new Date(msg.created_at);
+    // 1. 获取服务器传来的 UTC 时间
+    const utcDate = new Date(msg.created_at);
     
-    // 2. 使用 Intl.DateTimeFormat 强制输出北京时间格式
-    // 这样无论服务器在哪里，显示出来的永远是 24 小时制的北京时间
-    const timeParts = new Intl.DateTimeFormat('zh-CN', {
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false,
-        timeZone: 'Asia/Shanghai' // 强制指定上海（北京）时区
-    }).formatToParts(date);
+    // 2. 手动加上 8 小时的毫秒数 (8 * 60 * 60 * 1000)
+    // 这样无论你在哪，都会强制把时间往后拨 8 小时
+    const bjDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+    
+    const year = bjDate.getUTCFullYear();
+    const month = bjDate.getUTCMonth() + 1;
+    const day = bjDate.getUTCDate();
+    const hours = bjDate.getUTCHours().toString().padStart(2, '0');
+    const minutes = bjDate.getUTCMinutes().toString().padStart(2, '0');
 
-    // 提取各个部分
-    const p = {};
-    timeParts.map(({ type, value }) => { p[type] = value; });
-
-    // 3. 拼接成你要求的格式：2024/4/2    14:07
-    const timeStr = `${p.year}/${p.month}/${p.day}    ${p.hour}:${p.minute}`;
+    // 3. 拼接格式
+    const timeStr = `${year}/${month}/${day}    ${hours}:${minutes}`;
 
     return `
         <div class="message-item">
             <div class="meta-info">
-                <span>${timeStr}</span>
+                <span style="white-space: pre;">${timeStr}</span>
             </div>
             <div class="bubble">${escapeHtml(msg.content)}</div>
             <button class="del-btn" onclick="deleteMsg(${msg.id})">删除记录</button>

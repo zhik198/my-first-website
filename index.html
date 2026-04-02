@@ -225,19 +225,32 @@
     </div>
 
 <script>
-    // --- 工具函数：获取北京时间格式字符串 ---
-    function getBJTimeStr(dateInput) {
-        const date = dateInput ? new Date(dateInput) : new Date();
-        // 强制转换为东八区时间
-        return date.toLocaleString('zh-CN', {
+    // --- 核心修正：精密处理时区 ---
+    function formatToBJTime(dateStr) {
+        if (!dateStr) return "未知时间";
+        
+        // 1. 处理 Cloudflare D1 存储的原始字符串
+        // 如果字符串不带 Z，且不带时区，手动补上 Z 让浏览器将其识别为 UTC
+        let normalizedStr = dateStr;
+        if (!dateStr.includes('Z') && !dateStr.includes('+')) {
+            normalizedStr = dateStr.replace(' ', 'T') + 'Z';
+        }
+
+        const date = new Date(normalizedStr);
+        
+        // 2. 检查有效性
+        if (isNaN(date.getTime())) return dateStr;
+
+        // 3. 强制转换为北京时间显示
+        return new Intl.DateTimeFormat('zh-CN', {
             timeZone: 'Asia/Shanghai',
-            hour12: false,
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
-            minute: '2-digit'
-        }).replace(/\//g, '-'); // 格式化为 2026-04-02 16:00
+            minute: '2-digit',
+            hour12: false
+        }).format(date).replace(/\//g, '-');
     }
 
     // --- 页面显示控制 ---
@@ -305,7 +318,6 @@
         const name = document.getElementById('regUsername').value.trim();
         const password = document.getElementById('regPassword').value.trim();
         if(document.getElementById('regInviteCode').value.trim() !== "g6z6q6") return alert("邀请码错误");
-
         const res = await fetch('/api/register', {
             method: 'POST',
             body: JSON.stringify({ name, password })
@@ -321,8 +333,8 @@
             const messages = await res.json();
             
             list.innerHTML = messages.map(msg => {
-                // 这里是修正的关键：不管数据库存的是什么，显示时统一强转北京时区
-                const displayTime = getBJTimeStr(msg.created_at);
+                // 使用修正后的格式化函数
+                const displayTime = formatToBJTime(msg.created_at);
 
                 return `
                     <div class="message-item">
@@ -343,13 +355,11 @@
         const content = document.getElementById('contentInput').value.trim();
         if(!content) return;
         
-        // 发送给后端的请求中，我们直接带上当前的前端北京时间
         const res = await fetch('/api/message', {
             method: 'POST',
             body: JSON.stringify({ 
                 name: getCookie("username"), 
                 content: content
-                // 注意：如果你的后端逻辑会自动填充 created_at，显示时的 getBJTimeStr 也会纠正它
             })
         });
         if(res.ok) { document.getElementById('contentInput').value = ''; loadMessages(); }

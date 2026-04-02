@@ -35,7 +35,7 @@
 
         /* 留言板主界面 */
         #messagePage {
-            display: none; /* 初始隐藏 */
+            display: none;
             width: 100%;
             max-width: 600px;
             background: #fff;
@@ -77,8 +77,29 @@
         textarea { width: 100%; height: 80px; padding: 12px; border: 2px solid #eee; border-radius: 8px; resize: none; }
         #submitBtn { background: #000; width: 120px; align-self: flex-end; }
         
-        /* 顶部导航 */
-        .nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        /* --- 顶部导航优化 --- */
+        .nav-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .user-info-box {
+            display: flex;
+            align-items: center;
+            gap: 12px; /* 头像与名字的间距 */
+        }
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: #eee;
+        }
         .logout-link { font-size: 14px; color: #0070f3; cursor: pointer; }
     </style>
 </head>
@@ -105,7 +126,10 @@
 
     <div id="messagePage">
         <div class="nav-header">
-            <h3 id="welcomeUser">欢迎</h3>
+            <div class="user-info-box">
+                <img src="avatar.jpg" alt="头像" class="user-avatar">
+                <h3 id="welcomeUser">你好, dd</h3>
+            </div>
             <span class="logout-link" onclick="logout()">退出登录</span>
         </div>
         <div id="messagesList"></div>

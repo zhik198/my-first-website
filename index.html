@@ -33,19 +33,72 @@
         button.secondary { background: #fff; color: #0070f3; border: 1px solid #0070f3; }
         .error-text { color: red; font-size: 0.8em; margin-top: 5px; text-align: left; }
 
-        /* 留言板主界面 */
+        /* 留言板主界面 - 改为Flex布局以支持侧边栏 */
         #messagePage {
             display: none;
             width: 100%;
-            max-width: 600px;
+            max-width: 850px; 
             background: #fff;
-            padding: 20px;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex; 
+        }
+
+        /* 左侧侧边栏 (原红框位置) */
+        .sidebar {
+            width: 200px;
+            background: #f8f9fa;
+            border-right: 1px solid #eee;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .category-title {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .category-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #444;
+            transition: all 0.2s;
+        }
+
+        .category-item:hover { background: #eee; }
+        .category-item.active { 
+            background: #eef6ff; 
+            color: #0070f3; 
+            font-weight: bold; 
+        }
+
+        /* 导出按钮样式 */
+        #exportBtn {
+            background: #34c759; 
+            margin-top: auto; /* 自动推到最底部 */
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        /* 右侧主内容区 */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
         }
 
         #messagesList {
-            height: 400px;
+            height: 450px;
             overflow-y: auto;
             background: #f9f9f9;
             border: 1px solid #eee;
@@ -57,65 +110,55 @@
             gap: 15px;
         }
 
-        /* 消息条目容器：增加顶部间距，为日期腾出位置 */
-.message-item { 
-    display: flex; 
-    flex-direction: column; 
-    max-width: 85%; /* 稍微收窄一点，留出呼吸感 */
-    align-self: flex-end; 
-    margin-top: 20px; /* 增加条目间的间距 */
-    align-items: flex-end; /* 确保内部的时间、气泡、删除键全部右对齐 */
-}
+        .message-item { 
+            display: flex; 
+            flex-direction: column; 
+            max-width: 85%; 
+            align-self: flex-end; 
+            margin-top: 10px; 
+            align-items: flex-end; 
+        }
 
-.meta-info span {
-    white-space: pre; /* 关键：这会让 JS 字符串里的多个空格在网页上显示出来 */
-}
+        .meta-info { 
+            font-size: 11px; 
+            color: #8e8e93; 
+            margin-bottom: 5px; 
+            display: flex; 
+            justify-content: flex-end; 
+            padding-right: 4px;
+        }
 
-/* 日期时间：放在气泡上方，字号缩小，颜色变浅 */
-.meta-info { 
-    font-size: 11px; 
-    color: #8e8e93; /* 苹果标准灰色 */
-    margin-bottom: 5px; 
-    display: flex; 
-    justify-content: flex-end; /* 时间靠右对齐 */
-    padding-right: 4px;
-}
+        .meta-info span { white-space: pre; }
 
-/* 气泡样式：更圆润，颜色更柔和 */
-.bubble {
-    background: #95ec69; /* 微信绿，如果是纯果粉色可以换成 #007aff */
-    padding: 12px 16px;
-    border-radius: 18px;
-    border-top-right-radius: 4px; /* 经典的右上角尖角 */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    word-wrap: break-word;
-    font-size: 15px;
-    color: #000;
-    line-height: 1.4;
-}
+        .bubble {
+            background: #95ec69; 
+            padding: 10px 16px;
+            border-radius: 18px;
+            border-top-right-radius: 4px; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            word-wrap: break-word;
+            font-size: 15px;
+            color: #000;
+            line-height: 1.4;
+        }
 
-/* 删除按钮：放在气泡下方，极简设计 */
-.del-btn { 
-    color: #ff3b30; 
-    cursor: pointer; 
-    border: none; 
-    background: none; 
-    font-size: 11px; 
-    text-align: right;
-    margin-top: 4px;
-    opacity: 0.5; /* 平时半透明，不干扰视线 */
-    text-decoration: none;
-    transition: opacity 0.2s;
-}
+        .del-btn { 
+            color: #ff3b30; 
+            cursor: pointer; 
+            border: none; 
+            background: none; 
+            font-size: 11px; 
+            text-align: right;
+            margin-top: 4px;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+        }
+        .del-btn:hover { opacity: 1; }
 
-.del-btn:hover { opacity: 1; } /* 鼠标悬停时才显现 */
-
-        /* 输入区域 */
         .input-area { display: flex; flex-direction: column; gap: 10px; }
-        textarea { width: 100%; height: 80px; padding: 12px; border: 2px solid #eee; border-radius: 8px; resize: none; }
+        textarea { width: 100%; height: 80px; padding: 12px; border: 2px solid #eee; border-radius: 8px; resize: none; font-size: 14px; }
         #submitBtn { background: #000; width: 120px; align-self: flex-end; }
         
-        /* --- 顶部导航优化 --- */
         .nav-header { 
             display: flex; 
             justify-content: space-between; 
@@ -124,21 +167,18 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #f0f0f0;
         }
-        .user-info-box {
-            display: flex;
-            align-items: center;
-            gap: 12px; /* 头像与名字的间距 */
-        }
+        .user-info-box { display: flex; align-items: center; gap: 12px; }
         .user-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            background: #eee;
+            width: 40px; height: 40px; border-radius: 50%;
+            object-fit: cover; border: 1px solid #ddd; background: #eee;
         }
         .logout-link { font-size: 14px; color: #0070f3; cursor: pointer; }
+
+        /* 移动端简单适配 */
+        @media (max-width: 600px) {
+            #messagePage { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #eee; }
+        }
     </style>
 </head>
 <body>
@@ -163,22 +203,34 @@
     </div>
 
     <div id="messagePage">
-        <div class="nav-header">
-            <div class="user-info-box">
-                <img src="avatar.jpg" alt="头像" class="user-avatar">
-                <h3 id="welcomeUser">你好, dd</h3>
+        <div class="sidebar">
+            <div class="category-title">打卡分类</div>
+            <div class="category-list">
+                <div class="category-item active">运动打卡区</div>
+                <div class="category-item">其他打卡区</div>
             </div>
-            <span class="logout-link" onclick="logout()">退出登录</span>
+            
+            <button id="exportBtn">导出表格备份</button>
         </div>
-        <div id="messagesList"></div>
-        <div class="input-area">
-            <textarea id="contentInput" placeholder="说点什么..."></textarea>
-            <button id="submitBtn">确认发送</button>
+
+        <div class="main-content">
+            <div class="nav-header">
+                <div class="user-info-box">
+                    <img src="avatar.jpg" alt="头像" class="user-avatar">
+                    <h3 id="welcomeUser">你好, 用户</h3>
+                </div>
+                <span class="logout-link" onclick="logout()">退出登录</span>
+            </div>
+            <div id="messagesList"></div>
+            <div class="input-area">
+                <textarea id="contentInput" placeholder="说点什么..."></textarea>
+                <button id="submitBtn">确认发送</button>
+            </div>
         </div>
     </div>
 
 <script>
-    // --- 逻辑控制 ---
+    // --- 页面显示控制 ---
     function showLogin() { 
         document.getElementById('loginPage').style.display = 'block';
         document.getElementById('registerPage').style.display = 'none';
@@ -191,7 +243,7 @@
     function showMessages() {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('registerPage').style.display = 'none';
-        document.getElementById('messagePage').style.display = 'block';
+        document.getElementById('messagePage').style.display = 'flex'; // 注意这里改为 flex
         document.getElementById('welcomeUser').innerText = "你好, " + getCookie("username");
         loadMessages();
     }
@@ -201,10 +253,47 @@
         location.reload();
     }
 
-    // --- 登录 ---
+    // --- 导出 CSV 功能 ---
+    document.getElementById('exportBtn').onclick = () => {
+        const items = Array.from(document.querySelectorAll('.message-item'));
+        if (items.length === 0) return alert("当前没有数据可以导出");
+
+        // \uFEFF 是 BOM 头，确保 Excel 打开中文不乱码
+        let csvContent = "\uFEFF日期,时辰,内容\n";
+
+        items.forEach(item => {
+            const fullTimeStr = item.querySelector('.meta-info span').innerText;
+            // 按空格分割：[日期, "", "", "", 时辰]
+            const parts = fullTimeStr.split(/\s+/);
+            const date = parts[0] || "";
+            const time = parts[1] || "";
+            
+            let content = item.querySelector('.bubble').innerText;
+            // 清洗内容：处理双引号防止 CSV 格式崩溃
+            content = `"${content.replace(/"/g, '""')}"`;
+
+            csvContent += `${date},${time},${content}\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const dateTag = new Date().toISOString().slice(0,10);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `打卡备份_${dateTag}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // --- 登录接口 ---
     document.getElementById('loginSubmitBtn').onclick = async () => {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
+        if(!username || !password) return alert("请输入完整信息");
+        
         const res = await fetch('/api/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
@@ -213,70 +302,63 @@
         if (data.success) {
             document.cookie = `username=${username}; path=/; max-age=31536000`;
             showMessages();
-        } else { alert("登录失败"); }
+        } else { alert("登录失败：用户名或密码错误"); }
     };
 
-    // --- 注册 ---
+    // --- 注册接口 ---
     document.getElementById('registerSubmitBtn').onclick = async () => {
         const name = document.getElementById('regUsername').value.trim();
         const password = document.getElementById('regPassword').value.trim();
         const confirmPw = document.getElementById('regConfirmPassword').value.trim();
         const inviteCode = document.getElementById('regInviteCode').value.trim();
         
-        if(password !== confirmPw) return alert("密码不一致");
-        if(inviteCode !== "g6z6q6") return alert("邀请码错");
+        if(password !== confirmPw) return alert("两次输入的密码不一致");
+        if(inviteCode !== "g6z6q6") return alert("邀请码错误");
 
         const res = await fetch('/api/register', {
             method: 'POST',
             body: JSON.stringify({ name, password })
         });
-        if (res.ok) { alert("注册成功"); showLogin(); }
-        else { alert("注册失败"); }
+        if (res.ok) { alert("注册成功，请登录"); showLogin(); }
+        else { alert("注册失败，用户名可能已存在"); }
     };
 
-    // --- 加载留言 ---
+    // --- 加载数据 ---
     async function loadMessages() {
-    const list = document.getElementById('messagesList');
-    try {
-        const res = await fetch('/api/message');
-        const messages = await res.json();
-        const currentUser = getCookie("username");
-        
-     // --- 暴力修正：手动处理 8 小时时区偏移 ---
-list.innerHTML = messages.map(msg => {
-    const isMine = msg.name === currentUser;
-    
-    // 1. 获取服务器传来的 UTC 时间
-    const utcDate = new Date(msg.created_at);
-    
-    // 2. 手动加上 8 小时的毫秒数 (8 * 60 * 60 * 1000)
-    // 这样无论你在哪，都会强制把时间往后拨 8 小时
-    const bjDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
-    
-    const year = bjDate.getUTCFullYear();
-    const month = bjDate.getUTCMonth() + 1;
-    const day = bjDate.getUTCDate();
-    const hours = bjDate.getUTCHours().toString().padStart(2, '0');
-    const minutes = bjDate.getUTCMinutes().toString().padStart(2, '0');
+        const list = document.getElementById('messagesList');
+        try {
+            const res = await fetch('/api/message');
+            const messages = await res.json();
+            const currentUser = getCookie("username");
+            
+            list.innerHTML = messages.map(msg => {
+                // 处理北京时间时区偏移 (+8小时)
+                const utcDate = new Date(msg.created_at);
+                const bjDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+                
+                const year = bjDate.getUTCFullYear();
+                const month = bjDate.getUTCMonth() + 1;
+                const day = bjDate.getUTCDate();
+                const hours = bjDate.getUTCHours().toString().padStart(2, '0');
+                const minutes = bjDate.getUTCMinutes().toString().padStart(2, '0');
 
-    // 3. 拼接格式
-    const timeStr = `${year}/${month}/${day}    ${hours}:${minutes}`;
+                const timeStr = `${year}/${month}/${day}    ${hours}:${minutes}`;
 
-    return `
-        <div class="message-item">
-            <div class="meta-info">
-                <span style="white-space: pre;">${timeStr}</span>
-            </div>
-            <div class="bubble">${escapeHtml(msg.content)}</div>
-            <button class="del-btn" onclick="deleteMsg(${msg.id})">删除记录</button>
-        </div>
-    `;
-}).join('');
-        list.scrollTop = list.scrollHeight;
-    } catch (e) { list.innerHTML = "加载失败"; }
-}
+                return `
+                    <div class="message-item">
+                        <div class="meta-info">
+                            <span>${timeStr}</span>
+                        </div>
+                        <div class="bubble">${escapeHtml(msg.content)}</div>
+                        <button class="del-btn" onclick="deleteMsg(${msg.id})">删除记录</button>
+                    </div>
+                `;
+            }).join('');
+            list.scrollTop = list.scrollHeight;
+        } catch (e) { list.innerHTML = "<div style='padding:20px;color:red;'>数据加载失败，请刷新页面</div>"; }
+    }
 
-    // --- 发送 ---
+    // --- 发送留言 ---
     document.getElementById('submitBtn').onclick = async () => {
         const content = document.getElementById('contentInput').value.trim();
         if(!content) return;
@@ -287,14 +369,14 @@ list.innerHTML = messages.map(msg => {
         if(res.ok) { document.getElementById('contentInput').value = ''; loadMessages(); }
     };
 
-    // --- 删除 ---
+    // --- 删除留言 ---
     async function deleteMsg(id) {
-        if(!confirm("确定删除?")) return;
+        if(!confirm("确定要永久删除这条记录吗?")) return;
         await fetch(`/api/message?id=${id}`, { method: 'DELETE' });
         loadMessages();
     }
 
-    // --- 辅助 ---
+    // --- 工具函数 ---
     function getCookie(name) { return document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || ''; }
     function escapeHtml(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 

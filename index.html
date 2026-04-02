@@ -57,20 +57,58 @@
             gap: 15px;
         }
 
-        /* 微信气泡样式 */
-        .message-item { display: flex; flex-direction: column; max-width: 85%; align-self: flex-start; }
-        .message-item.mine { align-self: flex-end; }
-        .bubble {
-            background: #fff;
-            padding: 10px 14px;
-            border-radius: 15px;
-            border-top-left-radius: 2px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            word-wrap: break-word;
-        }
-        .message-item.mine .bubble { background: #95ec69; border-top-left-radius: 15px; border-top-right-radius: 2px; }
-        .meta-info { font-size: 12px; color: #999; margin-top: 5px; display: flex; gap: 8px; }
-        .del-btn { color: #ff4d4f; cursor: pointer; border: none; background: none; text-decoration: underline; }
+        /* 消息条目容器：增加顶部间距，为日期腾出位置 */
+.message-item { 
+    display: flex; 
+    flex-direction: column; 
+    max-width: 85%; /* 稍微收窄一点，留出呼吸感 */
+    align-self: flex-end; 
+    margin-top: 20px; /* 增加条目间的间距 */
+    align-items: flex-end; /* 确保内部的时间、气泡、删除键全部右对齐 */
+}
+
+.meta-info span {
+    white-space: pre; /* 关键：这会让 JS 字符串里的多个空格在网页上显示出来 */
+}
+
+/* 日期时间：放在气泡上方，字号缩小，颜色变浅 */
+.meta-info { 
+    font-size: 11px; 
+    color: #8e8e93; /* 苹果标准灰色 */
+    margin-bottom: 5px; 
+    display: flex; 
+    justify-content: flex-end; /* 时间靠右对齐 */
+    padding-right: 4px;
+}
+
+/* 气泡样式：更圆润，颜色更柔和 */
+.bubble {
+    background: #95ec69; /* 微信绿，如果是纯果粉色可以换成 #007aff */
+    padding: 12px 16px;
+    border-radius: 18px;
+    border-top-right-radius: 4px; /* 经典的右上角尖角 */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    word-wrap: break-word;
+    font-size: 15px;
+    color: #000;
+    line-height: 1.4;
+}
+
+/* 删除按钮：放在气泡下方，极简设计 */
+.del-btn { 
+    color: #ff3b30; 
+    cursor: pointer; 
+    border: none; 
+    background: none; 
+    font-size: 11px; 
+    text-align: right;
+    margin-top: 4px;
+    opacity: 0.5; /* 平时半透明，不干扰视线 */
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.del-btn:hover { opacity: 1; } /* 鼠标悬停时才显现 */
 
         /* 输入区域 */
         .input-area { display: flex; flex-direction: column; gap: 10px; }
@@ -198,28 +236,37 @@
 
     // --- 加载留言 ---
     async function loadMessages() {
-        const list = document.getElementById('messagesList');
-        try {
-            const res = await fetch('/api/message');
-            const messages = await res.json();
-            const currentUser = getCookie("username");
-            list.innerHTML = messages.map(msg => {
-                const isMine = msg.name === currentUser;
-                const date = new Date(msg.created_at);
-                const timeStr = `${date.getMonth()+1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}`;
-                return `
-                    <div class="message-item ${isMine ? 'mine' : ''}">
-                        <div class="bubble">${escapeHtml(msg.content)}</div>
-                        <div class="meta-info">
-                            <span>${escapeHtml(msg.name)} · ${timeStr}</span>
-                            <button class="del-btn" onclick="deleteMsg(${msg.id})">删除</button>
-                        </div>
+    const list = document.getElementById('messagesList');
+    try {
+        const res = await fetch('/api/message');
+        const messages = await res.json();
+        const currentUser = getCookie("username");
+        
+        list.innerHTML = messages.map(msg => {
+            const isMine = msg.name === currentUser;
+            const date = new Date(msg.created_at);
+            
+            // --- 按照你要求的格式：2024/4/2  13:36 ---
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const timeStr = `${year}/${month}/${day}    ${hours}:${minutes}`;
+
+            return `
+                <div class="message-item">
+                    <div class="meta-info">
+                        <span>${timeStr}</span>
                     </div>
-                `;
-            }).join('');
-            list.scrollTop = list.scrollHeight;
-        } catch (e) { list.innerHTML = "加载失败"; }
-    }
+                    <div class="bubble">${escapeHtml(msg.content)}</div>
+                    <button class="del-btn" onclick="deleteMsg(${msg.id})">删除记录</button>
+                </div>
+            `;
+        }).join('');
+        list.scrollTop = list.scrollHeight;
+    } catch (e) { list.innerHTML = "加载失败"; }
+}
 
     // --- 发送 ---
     document.getElementById('submitBtn').onclick = async () => {

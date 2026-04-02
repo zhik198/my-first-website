@@ -33,7 +33,7 @@
         button.secondary { background: #fff; color: #0070f3; border: 1px solid #0070f3; }
         .error-text { color: red; font-size: 0.8em; margin-top: 5px; text-align: left; }
 
-        /* 留言板主界面 - 改为Flex布局以支持侧边栏 */
+        /* 留言板主界面 */
         #messagePage {
             display: none;
             width: 100%;
@@ -45,7 +45,7 @@
             display: flex; 
         }
 
-        /* 左侧侧边栏 (原红框位置) */
+        /* 左侧侧边栏 */
         .sidebar {
             width: 200px;
             background: #f8f9fa;
@@ -80,10 +80,9 @@
             font-weight: bold; 
         }
 
-        /* 导出按钮样式 */
         #exportBtn {
             background: #34c759; 
-            margin-top: auto; /* 自动推到最底部 */
+            margin-top: auto; 
             font-size: 14px;
             padding: 10px;
         }
@@ -127,8 +126,6 @@
             justify-content: flex-end; 
             padding-right: 4px;
         }
-
-        .meta-info span { white-space: pre; }
 
         .bubble {
             background: #95ec69; 
@@ -174,7 +171,6 @@
         }
         .logout-link { font-size: 14px; color: #0070f3; cursor: pointer; }
 
-        /* 移动端简单适配 */
         @media (max-width: 600px) {
             #messagePage { flex-direction: column; }
             .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #eee; }
@@ -209,7 +205,6 @@
                 <div class="category-item active">运动打卡区</div>
                 <div class="category-item">其他打卡区</div>
             </div>
-            
             <button id="exportBtn">导出表格备份</button>
         </div>
 
@@ -230,6 +225,21 @@
     </div>
 
 <script>
+    // --- 工具函数：获取北京时间格式字符串 ---
+    function getBJTimeStr(dateInput) {
+        const date = dateInput ? new Date(dateInput) : new Date();
+        // 强制转换为东八区时间
+        return date.toLocaleString('zh-CN', {
+            timeZone: 'Asia/Shanghai',
+            hour12: false,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).replace(/\//g, '-'); // 格式化为 2026-04-02 16:00
+    }
+
     // --- 页面显示控制 ---
     function showLogin() { 
         document.getElementById('loginPage').style.display = 'block';
@@ -243,7 +253,7 @@
     function showMessages() {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('registerPage').style.display = 'none';
-        document.getElementById('messagePage').style.display = 'flex'; // 注意这里改为 flex
+        document.getElementById('messagePage').style.display = 'flex'; 
         document.getElementById('welcomeUser').innerText = "你好, " + getCookie("username");
         loadMessages();
     }
@@ -258,42 +268,28 @@
         const items = Array.from(document.querySelectorAll('.message-item'));
         if (items.length === 0) return alert("当前没有数据可以导出");
 
-        // \uFEFF 是 BOM 头，确保 Excel 打开中文不乱码
-        let csvContent = "\uFEFF日期,时辰,内容\n";
-
+        let csvContent = "\uFEFF日期时间,内容\n";
         items.forEach(item => {
-            const fullTimeStr = item.querySelector('.meta-info span').innerText;
-            // 按空格分割：[日期, "", "", "", 时辰]
-            const parts = fullTimeStr.split(/\s+/);
-            const date = parts[0] || "";
-            const time = parts[1] || "";
-            
+            const timeStr = item.querySelector('.meta-info span').innerText;
             let content = item.querySelector('.bubble').innerText;
-            // 清洗内容：处理双引号防止 CSV 格式崩溃
             content = `"${content.replace(/"/g, '""')}"`;
-
-            csvContent += `${date},${time},${content}\n`;
+            csvContent += `${timeStr},${content}\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        const dateTag = new Date().toISOString().slice(0,10);
-        
         link.setAttribute("href", url);
-        link.setAttribute("download", `打卡备份_${dateTag}.csv`);
-        link.style.visibility = 'hidden';
+        link.setAttribute("download", `打卡备份_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    // --- 登录接口 ---
+    // --- 登录/注册逻辑 ---
     document.getElementById('loginSubmitBtn').onclick = async () => {
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value.trim();
-        if(!username || !password) return alert("请输入完整信息");
-        
         const res = await fetch('/api/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
@@ -302,25 +298,19 @@
         if (data.success) {
             document.cookie = `username=${username}; path=/; max-age=31536000`;
             showMessages();
-        } else { alert("登录失败：用户名或密码错误"); }
+        } else { alert("登录失败"); }
     };
 
-    // --- 注册接口 ---
     document.getElementById('registerSubmitBtn').onclick = async () => {
         const name = document.getElementById('regUsername').value.trim();
         const password = document.getElementById('regPassword').value.trim();
-        const confirmPw = document.getElementById('regConfirmPassword').value.trim();
-        const inviteCode = document.getElementById('regInviteCode').value.trim();
-        
-        if(password !== confirmPw) return alert("两次输入的密码不一致");
-        if(inviteCode !== "g6z6q6") return alert("邀请码错误");
+        if(document.getElementById('regInviteCode').value.trim() !== "g6z6q6") return alert("邀请码错误");
 
         const res = await fetch('/api/register', {
             method: 'POST',
             body: JSON.stringify({ name, password })
         });
-        if (res.ok) { alert("注册成功，请登录"); showLogin(); }
-        else { alert("注册失败，用户名可能已存在"); }
+        if (res.ok) { alert("注册成功"); showLogin(); }
     };
 
     // --- 加载数据 ---
@@ -329,25 +319,15 @@
         try {
             const res = await fetch('/api/message');
             const messages = await res.json();
-            const currentUser = getCookie("username");
             
             list.innerHTML = messages.map(msg => {
-                // 处理北京时间时区偏移 (+8小时)
-                const utcDate = new Date(msg.created_at);
-                const bjDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
-                
-                const year = bjDate.getUTCFullYear();
-                const month = bjDate.getUTCMonth() + 1;
-                const day = bjDate.getUTCDate();
-                const hours = bjDate.getUTCHours().toString().padStart(2, '0');
-                const minutes = bjDate.getUTCMinutes().toString().padStart(2, '0');
-
-                const timeStr = `${year}/${month}/${day}    ${hours}:${minutes}`;
+                // 这里是修正的关键：不管数据库存的是什么，显示时统一强转北京时区
+                const displayTime = getBJTimeStr(msg.created_at);
 
                 return `
                     <div class="message-item">
                         <div class="meta-info">
-                            <span>${timeStr}</span>
+                            <span>${displayTime}</span>
                         </div>
                         <div class="bubble">${escapeHtml(msg.content)}</div>
                         <button class="del-btn" onclick="deleteMsg(${msg.id})">删除记录</button>
@@ -355,32 +335,35 @@
                 `;
             }).join('');
             list.scrollTop = list.scrollHeight;
-        } catch (e) { list.innerHTML = "<div style='padding:20px;color:red;'>数据加载失败，请刷新页面</div>"; }
+        } catch (e) { list.innerHTML = "加载失败"; }
     }
 
     // --- 发送留言 ---
     document.getElementById('submitBtn').onclick = async () => {
         const content = document.getElementById('contentInput').value.trim();
         if(!content) return;
+        
+        // 发送给后端的请求中，我们直接带上当前的前端北京时间
         const res = await fetch('/api/message', {
             method: 'POST',
-            body: JSON.stringify({ name: getCookie("username"), content })
+            body: JSON.stringify({ 
+                name: getCookie("username"), 
+                content: content
+                // 注意：如果你的后端逻辑会自动填充 created_at，显示时的 getBJTimeStr 也会纠正它
+            })
         });
         if(res.ok) { document.getElementById('contentInput').value = ''; loadMessages(); }
     };
 
-    // --- 删除留言 ---
     async function deleteMsg(id) {
-        if(!confirm("确定要永久删除这条记录吗?")) return;
+        if(!confirm("确定删除?")) return;
         await fetch(`/api/message?id=${id}`, { method: 'DELETE' });
         loadMessages();
     }
 
-    // --- 工具函数 ---
     function getCookie(name) { return document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || ''; }
     function escapeHtml(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-    // 初始化检查
     if (getCookie("username")) { showMessages(); } else { showLogin(); }
 </script>
 </body>

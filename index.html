@@ -6,24 +6,58 @@
     <title>我的永久留言板</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --body-bg: linear-gradient(135deg, #eef2ff, #f8fafc, #dbeafe);
+            --card-bg: rgba(255,255,255,0.78);
+            --panel-bg: rgba(255,255,255,0.72);
+            --sidebar-bg: rgba(248,249,250,0.72);
+            --list-bg: rgba(249,249,249,0.74);
+            --text-main: #111;
+            --text-sub: #555;
+            --border-color: rgba(0,0,0,0.08);
+            --bubble-bg: #95ec69;
+            --input-bg: rgba(255,255,255,0.88);
+            --shadow: 0 18px 45px rgba(15,23,42,0.14);
+        }
+
+        body.dark {
+            --body-bg: linear-gradient(135deg, #0f172a, #111827, #1e293b);
+            --card-bg: rgba(15,23,42,0.78);
+            --panel-bg: rgba(15,23,42,0.72);
+            --sidebar-bg: rgba(17,24,39,0.72);
+            --list-bg: rgba(15,23,42,0.62);
+            --text-main: #e5e7eb;
+            --text-sub: #a1a1aa;
+            --border-color: rgba(255,255,255,0.12);
+            --bubble-bg: #2563eb;
+            --input-bg: rgba(17,24,39,0.9);
+            --shadow: 0 18px 45px rgba(0,0,0,0.35);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f4f4f9;
+            background: var(--body-bg);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+            color: var(--text-main);
+            transition: background 0.25s ease, color 0.25s ease;
         }
 
         .card {
-            background: white;
+            background: var(--card-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
             text-align: center;
             width: 100%;
             max-width: 400px;
+            border: 1px solid var(--border-color);
         }
 
         h2 { margin-bottom: 20px; }
@@ -32,9 +66,11 @@
             width: 100%;
             padding: 12px;
             margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             font-size: 16px;
+            background: var(--input-bg);
+            color: var(--text-main);
         }
 
         button {
@@ -43,14 +79,14 @@
             background: #0070f3;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             margin-top: 10px;
         }
 
         button.secondary {
-            background: #fff;
+            background: transparent;
             color: #0070f3;
             border: 1px solid #0070f3;
         }
@@ -66,16 +102,19 @@
             display: none;
             width: 100%;
             max-width: 850px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
             overflow: hidden;
+            border: 1px solid var(--border-color);
         }
 
         .sidebar {
             width: 200px;
-            background: #f8f9fa;
-            border-right: 1px solid #eee;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -83,7 +122,7 @@
 
         .category-title {
             font-size: 12px;
-            color: #999;
+            color: var(--text-sub);
             text-transform: uppercase;
             margin-bottom: 15px;
             letter-spacing: 1px;
@@ -92,17 +131,17 @@
         .category-item {
             padding: 12px;
             margin-bottom: 8px;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 14px;
-            color: #444;
+            color: var(--text-main);
             transition: all 0.2s;
         }
 
-        .category-item:hover { background: #eee; }
+        .category-item:hover { background: rgba(127,127,127,0.12); }
 
         .category-item.active {
-            background: #eef6ff;
+            background: rgba(0,112,243,0.12);
             color: #0070f3;
             font-weight: bold;
         }
@@ -119,15 +158,15 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            background: #fff;
+            background: transparent;
         }
 
         #messagesList {
             height: 450px;
             overflow-y: auto;
-            background: #f9f9f9;
-            border: 1px solid #eee;
-            border-radius: 8px;
+            background: var(--list-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
             padding: 15px;
             margin-bottom: 20px;
             display: flex;
@@ -146,7 +185,7 @@
 
         .meta-info {
             font-size: 11px;
-            color: #8e8e93;
+            color: var(--text-sub);
             margin-bottom: 5px;
             display: flex;
             justify-content: flex-end;
@@ -154,26 +193,37 @@
         }
 
         .bubble {
-            background: #95ec69;
+            background: var(--bubble-bg);
             padding: 10px 16px;
             border-radius: 18px;
             border-top-right-radius: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
             word-wrap: break-word;
             font-size: 15px;
-            color: #000;
+            color: white;
             line-height: 1.4;
             white-space: pre-wrap;
+        }
+
+        body:not(.dark) .bubble {
+            color: #000;
         }
 
         .message-img {
             max-width: 260px;
             max-height: 260px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-top: 8px;
             display: block;
             object-fit: contain;
-            border: 1px solid rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            cursor: zoom-in;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .message-img:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.18);
         }
 
         .del-btn {
@@ -202,10 +252,17 @@
             width: 100%;
             height: 80px;
             padding: 12px;
-            border: 2px solid #eee;
-            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
             resize: none;
             font-size: 14px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: rgba(0,112,243,0.5);
         }
 
         #submitBtn {
@@ -214,13 +271,17 @@
             align-self: flex-end;
         }
 
+        body.dark #submitBtn {
+            background: #2563eb;
+        }
+
         .preview-box {
             display: none;
             align-items: center;
             gap: 10px;
-            background: #f8f8f8;
-            border: 1px solid #eee;
-            border-radius: 8px;
+            background: var(--list-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
             padding: 10px;
         }
 
@@ -228,14 +289,14 @@
             width: 80px;
             height: 80px;
             object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid #ddd;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
 
         .preview-info {
             flex: 1;
             font-size: 13px;
-            color: #555;
+            color: var(--text-sub);
         }
 
         #removeImageBtn {
@@ -248,7 +309,7 @@
 
         .upload-status {
             font-size: 13px;
-            color: #666;
+            color: var(--text-sub);
             display: none;
         }
 
@@ -258,7 +319,7 @@
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .user-info-box {
@@ -272,8 +333,25 @@
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             background: #eee;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .theme-toggle {
+            width: auto;
+            padding: 7px 10px;
+            margin: 0;
+            background: rgba(127,127,127,0.12);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+            border-radius: 999px;
         }
 
         .logout-link {
@@ -282,12 +360,46 @@
             cursor: pointer;
         }
 
+        #imageModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.78);
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            cursor: zoom-out;
+        }
+
+        #modalImage {
+            max-width: 92vw;
+            max-height: 88vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+            cursor: default;
+        }
+
+        #closeModalBtn {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            width: auto;
+            margin: 0;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.16);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 18px;
+        }
+
         @media (max-width: 600px) {
             #messagePage { flex-direction: column; }
             .sidebar {
                 width: 100%;
                 border-right: none;
-                border-bottom: 1px solid #eee;
+                border-bottom: 1px solid var(--border-color);
             }
         }
     </style>
@@ -329,7 +441,10 @@
                 <img src="avatar.jpg" alt="头像" class="user-avatar">
                 <h3 id="welcomeUser">你好, 用户</h3>
             </div>
-            <span class="logout-link" onclick="logout()">退出登录</span>
+            <div class="header-actions">
+                <button id="themeToggleBtn" class="theme-toggle" type="button">🌙</button>
+                <span class="logout-link" onclick="logout()">退出登录</span>
+            </div>
         </div>
 
         <div id="messagesList"></div>
@@ -350,6 +465,11 @@
             <button id="submitBtn">确认发送</button>
         </div>
     </div>
+</div>
+
+<div id="imageModal">
+    <button id="closeModalBtn" type="button">×</button>
+    <img id="modalImage" src="" alt="放大图片">
 </div>
 
 <script>
@@ -379,6 +499,22 @@
             hour12: false
         }).format(date).replace(/\//g, '-');
     }
+
+    function applyTheme(theme) {
+        if (theme === "dark") {
+            document.body.classList.add("dark");
+            document.getElementById("themeToggleBtn").innerText = "☀️";
+        } else {
+            document.body.classList.remove("dark");
+            document.getElementById("themeToggleBtn").innerText = "🌙";
+        }
+        localStorage.setItem("theme", theme);
+    }
+
+    document.getElementById("themeToggleBtn").onclick = () => {
+        const isDark = document.body.classList.contains("dark");
+        applyTheme(isDark ? "light" : "dark");
+    };
 
     function showLogin() {
         document.getElementById('loginPage').style.display = 'block';
@@ -557,7 +693,7 @@
 
                         ${safeContent ? `<div class="bubble">${safeContent}</div>` : ""}
 
-                        ${safeImageUrl ? `<img class="message-img" src="${safeImageUrl}" alt="图片">` : ""}
+                        ${safeImageUrl ? `<img class="message-img" src="${safeImageUrl}" alt="图片" onclick="openImageModal(this.src)">` : ""}
 
                         <button class="del-btn" onclick="deleteMsg(${msg.id})">删除记录</button>
                     </div>
@@ -607,6 +743,34 @@
         loadMessages();
     }
 
+    function openImageModal(src) {
+        const modal = document.getElementById("imageModal");
+        const modalImage = document.getElementById("modalImage");
+        modalImage.src = src;
+        modal.style.display = "flex";
+    }
+
+    function closeImageModal() {
+        const modal = document.getElementById("imageModal");
+        const modalImage = document.getElementById("modalImage");
+        modal.style.display = "none";
+        modalImage.src = "";
+    }
+
+    document.getElementById("imageModal").onclick = closeImageModal;
+
+    document.getElementById("modalImage").onclick = (e) => {
+        e.stopPropagation();
+    };
+
+    document.getElementById("closeModalBtn").onclick = closeImageModal;
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeImageModal();
+        }
+    });
+
     function getCookie(name) {
         return document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)')?.pop() || '';
     }
@@ -625,6 +789,8 @@
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
     }
+
+    applyTheme(localStorage.getItem("theme") || "light");
 
     if (getCookie("username")) {
         showMessages();

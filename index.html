@@ -83,6 +83,17 @@
             cursor: pointer;
             font-size: 16px;
             margin-top: 10px;
+            #chooseImageBtn{
+    width:auto;
+    align-self:flex-start;
+    padding:10px 16px;
+    margin-top:0;
+    background:#34c759;
+}
+
+
+
+            
         }
 
         button.secondary {
@@ -450,11 +461,23 @@
         <div id="messagesList"></div>
 
         <div class="input-area">
-            <textarea id="contentInput" placeholder="说点什么... 支持 Ctrl+V 粘贴截图"></textarea>
+           <textarea id="contentInput" placeholder="说点什么... 支持 Ctrl+V 粘贴截图"></textarea>
 
-            <div id="uploadStatus" class="upload-status">图片上传中...</div>
+<button id="chooseImageBtn" type="button">
+    选择图片
+</button>
 
-            <div id="previewBox" class="preview-box">
+<input
+    type="file"
+    id="imagePicker"
+    accept="image/*"
+    capture="environment"
+    style="display:none;"
+>
+
+<div id="uploadStatus" class="upload-status">图片上传中...</div>
+
+<div id="previewBox" class="preview-box">
                 <img id="previewImg" src="">
                 <div class="preview-info">
                     图片已上传，发送后会保存到记录里。
@@ -608,6 +631,53 @@
         document.getElementById("previewImg").src = "";
         document.getElementById("previewBox").style.display = "none";
     };
+    document.getElementById("chooseImageBtn").onclick = () => {
+    document.getElementById("imagePicker").click();
+};
+
+document.getElementById("imagePicker").addEventListener("change", async (e) => {
+
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const uploadStatus = document.getElementById("uploadStatus");
+    const submitBtn = document.getElementById("submitBtn");
+
+    try {
+
+        uploadStatus.style.display = "block";
+        uploadStatus.innerText = "图片上传中...";
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = "上传中";
+
+        const imageUrl = await uploadImageToCloudinary(file);
+
+        currentImageUrl = imageUrl;
+
+        document.getElementById("previewImg").src = imageUrl;
+        document.getElementById("previewBox").style.display = "flex";
+
+        uploadStatus.innerText = "图片上传成功";
+
+        setTimeout(() => {
+            uploadStatus.style.display = "none";
+        }, 1200);
+
+    } catch (err) {
+
+        alert("图片上传失败：" + err.message);
+        uploadStatus.style.display = "none";
+
+    } finally {
+
+        submitBtn.disabled = false;
+        submitBtn.innerText = "确认发送";
+
+    }
+
+});
 
     document.getElementById('exportBtn').onclick = () => {
         const items = Array.from(document.querySelectorAll('.message-item'));
